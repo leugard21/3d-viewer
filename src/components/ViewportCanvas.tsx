@@ -1,8 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
-import { Canvas } from "@react-three/fiber";
+import { Canvas, ThreeEvent, useFrame } from "@react-three/fiber";
 import { OrbitControls, Bounds, useBounds } from "@react-three/drei";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useSceneStore } from "@/store/use-scene-store";
+import { findByUUID } from "@/lib/scene-utils";
+import * as THREE from "three";
 
 function StudioLights() {
   return (
@@ -42,8 +45,20 @@ function Helpers() {
 
 function SceneObject() {
   const object = useSceneStore((s) => s.object);
+  const setSelection = useSceneStore((s) => s.setSelection);
+
+  const onPointerDown = (e: ThreeEvent<MouseEvent>) => {
+    e.stopPropagation();
+    const picked = e.intersections[0]?.object as THREE.Object3D | undefined;
+    if (!picked) return;
+
+    let o: THREE.Object3D | null = picked;
+    while (o && !(o as any).isMesh && o.parent) o = o.parent;
+    if (o) setSelection(o.uuid);
+  };
+
   if (!object) return null;
-  return <primitive object={object} />;
+  return <primitive object={object} onPointerDown={onPointerDown} />;
 }
 
 function AutoFitOnSignal() {
@@ -60,12 +75,45 @@ function AutoFitOnSignal() {
   return null;
 }
 
+function SelectedBox() {
+  const root = useSceneStore((s) => s.object);
+  const selectionId = useSceneStore((s) => s.selectionId);
+  const helperRef = useRef<THREE.BoxHelper | null>(null);
+  const selected = useMemo(
+    () => (selectionId ? findByUUID(root, selectionId) : null),
+    [root, selectionId],
+  );
+
+  useEffect(() => {
+    if (!selected) {
+      helperRef.current = null;
+      return;
+    }
+    const helper = new THREE.BoxHelper(selected, 0x4ea4f4);
+    helperRef.current = helper;
+    selected.add(helper);
+    return () => {
+      selected.remove(helper);
+      helper.geometry.dispose();
+      (helper.material as THREE.Material).dispose?.();
+      helperRef.current = null;
+    };
+  }, [selected]);
+
+  useFrame(() => {
+    if (helperRef.current && selected) {
+      helperRef.current.update();
+    }
+  });
+
+  return null;
+}
+
 export function ViewportCanvas() {
   const camera = useMemo(
     () => ({ fov: 50, near: 0.1, far: 1000, position: [3, 2, 6] as [number, number, number] }),
     [],
   );
-
   const filename = useSceneStore((s) => s.filename);
   const stats = useSceneStore((s) => s.stats);
   const error = useSceneStore((s) => s.error);
@@ -79,6 +127,7 @@ export function ViewportCanvas() {
 
         <Bounds fit clip observe margin={1.2}>
           <SceneObject />
+          <SelectedBox />
           <AutoFitOnSignal />
         </Bounds>
 

@@ -49,7 +49,7 @@ export function computeStats(root: THREE.Object3D) {
   let tris = 0;
   const mats = new Set<THREE.Material>();
 
-  root.traverse((o) => {
+  root.traverse((o: THREE.Object3D) => {
     const m = o as THREE.Mesh;
     if ((m as any).isMesh && m.geometry) {
       const g = m.geometry as THREE.BufferGeometry;
