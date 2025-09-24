@@ -4,6 +4,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useSceneStore } from "@/store/use-scene-store";
 import { InspectorTree } from "./InspectorTree";
+import { MaterialsPanel } from "./MaterialsPanel";
 
 export function Sidebar() {
   const ui = useSceneStore((s) => s.ui);
@@ -21,6 +22,9 @@ export function Sidebar() {
       </div>
 
       <InspectorTree />
+      <Separator />
+
+      <MaterialsPanel />
       <Separator />
       <div className="p-3 space-y-3">
         <h3 className="text-xs font-medium">Scene Helpers</h3>
