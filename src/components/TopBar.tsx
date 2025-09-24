@@ -15,6 +15,8 @@ import { useSceneStore } from "@/store/use-scene-store";
 export function TopBar() {
   const lighting = useSceneStore((s) => s.ui.lighting);
   const setUI = useSceneStore((s) => s.setUI);
+  const requestFileOpen = useSceneStore((s) => s.requestFileOpen);
+  const setScene = useSceneStore((s) => s.setScene);
 
   return (
     <div className="flex w-full items-center gap-2">
@@ -22,13 +24,20 @@ export function TopBar() {
       <Separator orientation="vertical" className="mx-2 h-6" />
 
       <div className="flex items-center gap-1">
-        <Button size="sm" variant="secondary">
+        <Button size="sm" variant="secondary" onClick={() => requestFileOpen()}>
           <FolderOpen className="mr-2 h-4 w-4" /> Open
         </Button>
-        <Button size="sm" variant="ghost">
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => setScene({ object: null, filename: null, stats: null })}
+        >
           <RotateCcw className="mr-2 h-4 w-4" /> Reset
         </Button>
-        <Button size="sm">
+        <Button
+          size="sm"
+          onClick={() => document.dispatchEvent(new CustomEvent("viewer-screenshot"))}
+        >
           <Camera className="mr-2 h-4 w-4" /> Screenshot
         </Button>
       </div>
