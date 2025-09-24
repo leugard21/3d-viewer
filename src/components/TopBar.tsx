@@ -70,8 +70,6 @@ export function TopBar() {
           </SelectContent>
         </Select>
       </div>
-
-      <div className="ml-auto text-xs text-muted-foreground">Step 8: Export</div>
     </div>
   );
 }
