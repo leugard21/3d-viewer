@@ -2,7 +2,7 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Camera, FolderOpen, RotateCcw, Sun } from "lucide-react";
+import { Camera, FolderOpen, RotateCcw, Sun, Download } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -17,6 +17,7 @@ export function TopBar() {
   const setUI = useSceneStore((s) => s.setUI);
   const requestFileOpen = useSceneStore((s) => s.requestFileOpen);
   const setScene = useSceneStore((s) => s.setScene);
+  const filename = useSceneStore((s) => s.filename);
 
   return (
     <div className="flex w-full items-center gap-2">
@@ -40,14 +41,27 @@ export function TopBar() {
         >
           <Camera className="mr-2 h-4 w-4" /> Screenshot
         </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() =>
+            document.dispatchEvent(
+              new CustomEvent("viewer-export-glb", {
+                detail: { suggested: (filename || "scene").replace(/\.[^.]+$/, "") },
+              }),
+            )
+          }
+        >
+          <Download className="mr-2 h-4 w-4" /> Export .glb
+        </Button>
       </div>
 
       <Separator orientation="vertical" className="mx-2 h-6" />
       <div className="flex items-center gap-2">
-        <Sun className="size-4" />
+        <Sun className="h-4 w-4" />
         <Select value={lighting} onValueChange={(v) => setUI({ lighting: v as any })}>
           <SelectTrigger className="h-8 w-[160px]">
-            <SelectValue placeholder="lighting" />
+            <SelectValue placeholder="Lighting" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="studio">Studio</SelectItem>
@@ -56,6 +70,8 @@ export function TopBar() {
           </SelectContent>
         </Select>
       </div>
+
+      <div className="ml-auto text-xs text-muted-foreground">Step 8: Export</div>
     </div>
   );
 }

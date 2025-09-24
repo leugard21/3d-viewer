@@ -1,11 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
-import { Canvas, ThreeEvent, useFrame } from "@react-three/fiber";
+import { Canvas, ThreeEvent, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls, Bounds, useBounds, TransformControls } from "@react-three/drei";
 import { useEffect, useMemo, useRef } from "react";
 import { useSceneStore } from "@/store/use-scene-store";
 import { findByUUID } from "@/lib/scene-utils";
 import * as THREE from "three";
+import { exportGLB, triggerDownload } from "@/lib/exporters";
 
 function StudioLights() {
   return (
@@ -132,6 +133,52 @@ function SelectedBox() {
   return null;
 }
 
+function ScreenshotAndExportHandlers() {
+  const { gl } = useThree();
+  const root = useSceneStore((s) => s.object);
+  const filename = useSceneStore((s) => s.filename);
+
+  useEffect(() => {
+    const onShot = () => {
+      try {
+        // Ensure the current frame is rendered
+        const url = gl.domElement.toDataURL("image/png");
+        const a = document.createElement("a");
+        a.href = url;
+        const base = (filename || "screenshot").replace(/\.[^.]+$/, "");
+        a.download = `${base}.png`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      } catch (e) {
+        console.error("screenshot failed", e);
+      }
+    };
+
+    const onExport = async (e: Event) => {
+      const custom = e as CustomEvent<{ suggested?: string }>;
+      if (!root) return;
+      try {
+        const blob = await exportGLB(root);
+        const base = custom.detail?.suggested || (filename || "scene").replace(/\.[^.]+$/, "");
+        triggerDownload(blob, `${base}.glb`);
+      } catch (err) {
+        console.error("export failed", err);
+        alert("Failed to export GLB.");
+      }
+    };
+
+    document.addEventListener("viewer-screenshot", onShot);
+    document.addEventListener("viewer-export-glb", onExport as EventListener);
+    return () => {
+      document.removeEventListener("viewer-screenshot", onShot);
+      document.removeEventListener("viewer-export-glb", onExport as EventListener);
+    };
+  }, [gl, root, filename]);
+
+  return null;
+}
+
 export function ViewportCanvas() {
   const camera = useMemo(
     () => ({ fov: 50, near: 0.1, far: 1000, position: [3, 2, 6] as [number, number, number] }),
@@ -164,6 +211,8 @@ export function ViewportCanvas() {
           panSpeed={0.8}
           zoomSpeed={0.9}
         />
+
+        <ScreenshotAndExportHandlers />
       </Canvas>
 
       <div className="pointer-events-none absolute left-2 top-2 rounded-md bg-background/70 p-2 text-xs shadow">
