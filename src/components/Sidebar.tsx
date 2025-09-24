@@ -114,6 +114,16 @@ export function Sidebar() {
               onCheckedChange={(v) => setUI({ showAxes: v })}
             />
           </div>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="stats" className="text-xs">
+              Perf Stats
+            </Label>
+            <Switch
+              id="stats"
+              checked={ui.showStats}
+              onCheckedChange={(v) => setUI({ showStats: v })}
+            />
+          </div>
         </div>
       </CollapsibleSection>
     </div>

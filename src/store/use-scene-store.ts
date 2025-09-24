@@ -9,6 +9,7 @@ export type TransformMode = "translate" | "rotate" | "scale";
 type UIState = {
   showGrid: boolean;
   showAxes: boolean;
+  showStats: boolean;
   lighting: LightingPreset;
   transformMode: TransformMode;
   sidebarCollapsed: boolean;
@@ -55,6 +56,7 @@ const initialUI: UIState = {
   showGrid: true,
   showAxes: true,
   lighting: "studio",
+  showStats: false,
   transformMode: "translate",
   sidebarCollapsed: false,
   panel: {
@@ -103,26 +105,23 @@ export const useSceneStore = create<SceneState>()(
     }),
     {
       name: "viewer-ui",
-      version: 2, // bump when UI shape changes
+      version: 2,
       partialize: (state) => ({ ui: state.ui }),
       migrate: (persisted, fromVersion) => {
-        // If nothing was persisted yet, just use it as-is.
         if (!persisted) return persisted as any;
 
-        // Ensure we always have a valid UI shape
         const ui = (persisted as any).ui ?? {};
         const nextUI: UIState = {
           ...initialUI,
           ...ui,
+          showStats: ui.showStats ?? initialUI.showStats,
           panel: {
             ...initialUI.panel,
             ...(ui.panel ?? {}),
           },
         };
 
-        // Add more migrations per version here if needed
         if (fromVersion < 2) {
-          // v1 -> v2 ensured panel + sidebarCollapsed defaulted above
         }
 
         (persisted as any).ui = nextUI;

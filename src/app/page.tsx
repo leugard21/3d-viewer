@@ -3,12 +3,14 @@ import { TopBar } from "@/components/TopBar";
 import { Sidebar } from "@/components/Sidebar";
 import { ViewportCanvas } from "@/components/ViewportCanvas";
 import { SceneLoader } from "@/components/SceneLoader";
+import { KeyboardShortcuts } from "@/components/KeyboardShortcuts";
 
 export default function HomePage() {
   return (
     <>
       <AppShell topBar={<TopBar />} sidebar={<Sidebar />} viewport={<ViewportCanvas />} />
       <SceneLoader />
+      <KeyboardShortcuts />
     </>
   );
 }

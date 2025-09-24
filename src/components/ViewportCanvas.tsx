@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import { Canvas, ThreeEvent, useFrame, useThree } from "@react-three/fiber";
-import { OrbitControls, Bounds, useBounds, TransformControls } from "@react-three/drei";
+import { OrbitControls, Bounds, useBounds, TransformControls, Stats } from "@react-three/drei";
 import { useEffect, useMemo, useRef } from "react";
 import { useSceneStore } from "@/store/use-scene-store";
 import { findByUUID } from "@/lib/scene-utils";
@@ -99,40 +99,6 @@ function TransformGizmo() {
   );
 }
 
-function SelectedBox() {
-  const root = useSceneStore((s) => s.object);
-  const selectionId = useSceneStore((s) => s.selectionId);
-  const helperRef = useRef<THREE.BoxHelper | null>(null);
-  const selected = useMemo(
-    () => (selectionId ? findByUUID(root, selectionId) : null),
-    [root, selectionId],
-  );
-
-  useEffect(() => {
-    if (!selected) {
-      helperRef.current = null;
-      return;
-    }
-    const helper = new THREE.BoxHelper(selected, 0x4ea4f4);
-    helperRef.current = helper;
-    selected.add(helper);
-    return () => {
-      selected.remove(helper);
-      helper.geometry.dispose();
-      (helper.material as THREE.Material).dispose?.();
-      helperRef.current = null;
-    };
-  }, [selected]);
-
-  useFrame(() => {
-    if (helperRef.current && selected) {
-      helperRef.current.update();
-    }
-  });
-
-  return null;
-}
-
 function ScreenshotAndExportHandlers() {
   const { gl } = useThree();
   const root = useSceneStore((s) => s.object);
@@ -179,6 +145,35 @@ function ScreenshotAndExportHandlers() {
   return null;
 }
 
+function FitHandlers() {
+  const api = useBounds();
+  const root = useSceneStore((s) => s.object);
+  const selectionId = useSceneStore((s) => s.selectionId);
+
+  useEffect(() => {
+    const onFitSelection = (e: Event) => {
+      const { detail } = e as CustomEvent<{ selectionId?: string | null }>;
+      const sel = detail?.selectionId ?? selectionId;
+      try {
+        if (root && sel) {
+          const target = findByUUID(root, sel);
+          if (target) {
+            api.refresh(target).fit().clip();
+            return;
+          }
+        }
+        // fallback: fit whole scene
+        api.refresh().fit().clip();
+      } catch {}
+    };
+    document.addEventListener("viewer-fit-selection", onFitSelection as EventListener);
+    return () =>
+      document.removeEventListener("viewer-fit-selection", onFitSelection as EventListener);
+  }, [api, root, selectionId]);
+
+  return null;
+}
+
 export function ViewportCanvas() {
   const camera = useMemo(
     () => ({ fov: 50, near: 0.1, far: 1000, position: [3, 2, 6] as [number, number, number] }),
@@ -188,6 +183,7 @@ export function ViewportCanvas() {
   const stats = useSceneStore((s) => s.stats);
   const error = useSceneStore((s) => s.error);
   const isTransforming = useSceneStore((s) => s.isTransforming);
+  const showStats = useSceneStore((s) => s.ui.showStats);
 
   return (
     <div className="relative h-full w-full">
@@ -200,6 +196,7 @@ export function ViewportCanvas() {
           <SceneObject />
           <TransformGizmo />
           <AutoFitOnSignal />
+          <FitHandlers />
         </Bounds>
 
         <OrbitControls
@@ -212,6 +209,7 @@ export function ViewportCanvas() {
           zoomSpeed={0.9}
         />
 
+        {showStats && <Stats />}
         <ScreenshotAndExportHandlers />
       </Canvas>
 
