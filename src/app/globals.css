@@ -120,3 +120,28 @@
     @apply bg-background text-foreground;
   }
 }
+
+@keyframes expand {
+  from {
+    height: 0;
+  }
+  to {
+    height: var(--radix-collapsible-content-height);
+  }
+}
+@keyframes collapse {
+  from {
+    height: var(--radix-collapsible-content-height);
+  }
+  to {
+    height: 0;
+  }
+}
+[data-state="open"].animate-expand {
+  animation: expand 160ms ease-out;
+  overflow: hidden;
+}
+[data-state="closed"].animate-collapse {
+  animation: collapse 160ms ease-in;
+  overflow: hidden;
+}

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import { Canvas, ThreeEvent, useFrame } from "@react-three/fiber";
-import { OrbitControls, Bounds, useBounds } from "@react-three/drei";
+import { OrbitControls, Bounds, useBounds, TransformControls } from "@react-three/drei";
 import { useEffect, useMemo, useRef } from "react";
 import { useSceneStore } from "@/store/use-scene-store";
 import { findByUUID } from "@/lib/scene-utils";
@@ -75,6 +75,29 @@ function AutoFitOnSignal() {
   return null;
 }
 
+function TransformGizmo() {
+  const root = useSceneStore((s) => s.object);
+  const selectionId = useSceneStore((s) => s.selectionId);
+  const mode = useSceneStore((s) => s.ui.transformMode);
+  const isTransforming = useSceneStore((s) => s.isTransforming);
+  const setIsTransforming = useSceneStore((s) => s.setIsTransforming);
+
+  const target = useMemo(
+    () => (selectionId ? findByUUID(root, selectionId) : null),
+    [root, selectionId],
+  );
+  if (!target) return null;
+
+  return (
+    <TransformControls
+      object={target as any}
+      mode={mode}
+      onMouseDown={() => setIsTransforming(true)}
+      onMouseUp={() => setIsTransforming(false)}
+    />
+  );
+}
+
 function SelectedBox() {
   const root = useSceneStore((s) => s.object);
   const selectionId = useSceneStore((s) => s.selectionId);
@@ -117,6 +140,7 @@ export function ViewportCanvas() {
   const filename = useSceneStore((s) => s.filename);
   const stats = useSceneStore((s) => s.stats);
   const error = useSceneStore((s) => s.error);
+  const isTransforming = useSceneStore((s) => s.isTransforming);
 
   return (
     <div className="relative h-full w-full">
@@ -127,12 +151,13 @@ export function ViewportCanvas() {
 
         <Bounds fit clip observe margin={1.2}>
           <SceneObject />
-          <SelectedBox />
+          <TransformGizmo />
           <AutoFitOnSignal />
         </Bounds>
 
         <OrbitControls
           makeDefault
+          enabled={!isTransforming}
           enableDamping
           dampingFactor={0.08}
           rotateSpeed={0.9}
